@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="card dashboard-card">
+        <div class="header">
+            <div>
+                <h2>Dashboard</h2>
+                <span class="user-name">{{ username }}</span>
+            </div>
+            <button class="logout-btn" onclick="window.location.href='/'">Logout</button>
+        </div>
+
+        <div class="credit-box">
+            <p>AVAILABLE CREDITS</p>
+            <h1>{{ credits }}</h1>
+        </div>
+
+        <form id="otp-form">
+            <input type="email" name="email" placeholder="ENTER EMAIL ADDRESS" required>
+            <input type="hidden" name="username" value="{{ username }}">
+            <button type="submit" class="login-btn">🚀 Send Register Code (1 credit)</button>
+        </form>
+
+        <div id="status-box" class="status-box">
+            ⌛ Ready to send...
+        </div>
+
+        <div class="social">
+            <button class="wa">💬 WhatsApp</button>
+            <button class="tg">✈️ Telegram</button>
+        </div>
+        
+        <div class="contact">
+            Need credits? Contact: 918709353461 | @xnitehere
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('otp-form');
+        const statusBox = document.getElementById('status-box');
+        const creditValue = document.querySelector('.credit-box h1');
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const email = form.email.value.trim();
+            const username = form.username.value;
+            if (!email) return;
+
+            statusBox.textContent = '⏳ Sending...';
+            try {
+                const response = await fetch(`/api/send-otp/${encodeURIComponent(email)}?username=${encodeURIComponent(username)}`);
+                const data = await response.json();
+                        // Display a single-word result if provided, otherwise show message
+                        if (data.result) {
+                            statusBox.textContent = data.result;
+                        } else if (data.success === true) {
+                            statusBox.textContent = 'SUCCESS';
+                        } else {
+                            statusBox.textContent = 'ERROR';
+                        }
+                        if (data.credits !== undefined) {
+                            creditValue.textContent = data.credits;
+                        }
+            } catch (error) {
+                statusBox.textContent = '⚠️ Failed to send OTP. Try again.';
+            }
+        });
+    </script>
+</body>
+</html>

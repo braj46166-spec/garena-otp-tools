@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="card">
+        <h1>Garena Email Tool</h1>
+        <p>Send registration codes with credits</p>
+        
+        <div class="toggle-buttons">
+            <button class="active">🔑 Login</button>
+            <button onclick="window.location.href='/regester'">✨ Sign Up</button>
+        </div>
+
+        <form action="/login" method="POST">
+            <input type="text" name="username" placeholder="USERNAME" required>
+            <input type="password" name="password" placeholder="PASSWORD" required>
+            <button type="submit" class="login-btn">🔓 Login</button>
+        </form>
+
+        <div class="social">
+            <button class="wa">💬 WhatsApp</button>
+            <button class="tg">✈️ Telegram</button>
+        </div>
+        <div class="contact">Contact for credits: 918709353461 | @xnitehere</div>
+    </div>
+</body>
+</html>

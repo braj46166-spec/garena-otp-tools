@@ -1,0 +1,183 @@
+body {
+    background: #0a0e1a;
+    color: white;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+.card {
+    background: #161b2d;
+    padding: 30px;
+    border-radius: 20px;
+    width: 320px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.toggle-buttons {
+    background: #0f1422;
+    padding: 5px;
+    border-radius: 10px;
+    display: flex;
+    margin-bottom: 20px;
+}
+.toggle-buttons button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+}
+.toggle-buttons .active { background: #4f46e5; }
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    background: #0f1422;
+    border: 1px solid #2d3446;
+    color: white;
+    box-sizing: border-box;
+}
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+.social { display: flex; gap: 10px; margin-top: 20px; }
+.social button { flex: 1; padding: 10px; border: none; border-radius: 8px; color: white; cursor: pointer; }
+.wa { background: #25d366; }
+.tg { background: #0088cc; }
+.contact { margin-top: 20px; font-size: 12px; color: #666; }
+
+.dashboard-card {
+    width: 380px;
+}
+
+.admin-card {
+    width: 420px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.user-name {
+    display: block;
+    margin-top: 6px;
+    color: #a5b4fc;
+    font-size: 14px;
+}
+
+.credit-box {
+    background: #4f46e5;
+    padding: 22px;
+    border-radius: 18px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.credit-box p {
+    margin: 0 0 10px;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.credit-box h1 {
+    margin: 0;
+    font-size: 44px;
+}
+
+.status-box {
+    background: #0f1422;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+    text-align: center;
+    color: #d1d5db;
+    font-size: 13px;
+}
+
+.logout-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+input[type="email"] {
+    width: 100%;
+}
+
+button.login-btn {
+    width: 100%;
+    padding: 12px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button.login-btn:hover,
+.logout-btn:hover,
+.social button:hover {
+    opacity: 0.95;
+}
+
+.user-list {
+    margin-top: 15px;
+    background: #0f1422;
+    border-radius: 14px;
+    padding: 12px;
+}
+
+.user-list table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+}
+
+.user-list th,
+.user-list td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #2d3446;
+}
+
+.user-list th {
+    color: #a5b4fc;
+    font-size: 13px;
+}
+
+.user-list td {
+    font-size: 14px;
+}
+
+.link-button {
+    color: #4f46e5;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 12px;
+}

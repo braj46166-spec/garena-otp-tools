@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="card admin-card">
+        <h1>Admin Panel</h1>
+        <p>Send credits to registered users</p>
+
+        <form action="/add_credit" method="POST">
+            <input type="text" name="target_user" placeholder="Target Username" required>
+            <input type="number" name="amount" placeholder="Credit Amount" required>
+            <button type="submit" class="login-btn">➕ Add Credits</button>
+        </form>
+
+        <h2>Registered Users</h2>
+        <div class="user-list">
+            {% if users %}
+                <table>
+                    <tr>
+                        <th>Username</th>
+                        <th>Credits</th>
+                    </tr>
+                    {% for username, data in users.items() %}
+                    <tr>
+                        <td>{{ username }}</td>
+                        <td>{{ data.credits }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No users registered yet.</p>
+            {% endif %}
+        </div>
+
+        <br>
+        <a href="/" class="link-button">Back to Login</a>
+    </div>
+</body>
+</html>
