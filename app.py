@@ -57,7 +57,22 @@ def login_post():
     username = request.form.get('username')
     password = request.form.get('password')
 
+    # Check in-memory first, then MongoDB
     user = users_db.get(username)
+    
+    # Try to sync from MongoDB if user not in memory
+    if not user:
+        try:
+            user_doc = users_collection.find_one({"username": username})
+            if user_doc:
+                user = {
+                    "password": user_doc.get('password', ''),
+                    "credits": user_doc.get('credits', 0)
+                }
+                users_db[username] = user  # Sync to memory
+        except Exception as e:
+            app.logger.error(f"MongoDB lookup failed: {e}")
+    
     if user and user["password"] == password:
         return redirect(url_for('dashboard', username=username, credits=user["credits"]))
 
@@ -78,7 +93,20 @@ def register_user():
     if username in users_db:
         return "Username already exists. <a href='/regester'>Go Back</a>"
 
+    # Save to in-memory database
     users_db[username] = {"password": password, "credits": 0}
+    
+    # Save to MongoDB
+    try:
+        users_collection.insert_one({
+            "username": username,
+            "password": password,
+            "credits": 0
+        })
+        app.logger.info(f"User {username} registered and saved to MongoDB")
+    except Exception as e:
+        app.logger.error(f"Failed to save user to MongoDB: {e}")
+
     return redirect(url_for('dashboard', username=username, credits=0))
 
 @app.route('/send_code', methods=['POST'])
@@ -224,19 +252,72 @@ def api_send_otp(email=None):
         "credits": user["credits"]
     })
 
+@app.route('/admin-panel')
+def admin_panel():
+    """Fetch all users from MongoDB and display in admin panel"""
+    try:
+        # Fetch users from MongoDB
+        all_users = {}
+        for user_doc in users_collection.find():
+            username = user_doc.get('username')
+            if username:
+                all_users[username] = {
+                    'password': user_doc.get('password', ''),
+                    'credits': user_doc.get('credits', 0)
+                }
+        # Sync with in-memory database
+        users_db.update(all_users)
+        return render_template('admin.html', users=all_users)
+    except Exception as e:
+        app.logger.error(f"Error fetching users from MongoDB: {e}")
+        # Fallback to in-memory database
+        return render_template('admin.html', users=users_db)
+
 @app.route('/admin')
 def admin():
-    return render_template('admin.html', users=users_db)
+    """Legacy route - redirects to admin-panel"""
+    try:
+        # Fetch users from MongoDB
+        all_users = {}
+        for user_doc in users_collection.find():
+            username = user_doc.get('username')
+            if username:
+                all_users[username] = {
+                    'password': user_doc.get('password', ''),
+                    'credits': user_doc.get('credits', 0)
+                }
+        # Sync with in-memory database
+        users_db.update(all_users)
+        return render_template('admin.html', users=all_users)
+    except Exception as e:
+        app.logger.error(f"Error fetching users from MongoDB: {e}")
+        # Fallback to in-memory database
+        return render_template('admin.html', users=users_db)
 
 @app.route('/add_credit', methods=['POST'])
 def add_credit():
+    """Add credits to a user - updates both in-memory and MongoDB"""
     target_user = request.form.get('target_user')
     amount = int(request.form.get('amount', 0))
 
-    if target_user in users_db:
-        users_db[target_user]["credits"] += amount
-        return f"Success! {target_user} ke naye credits: {users_db[target_user]['credits']} <br> <a href='/admin'>Go Back</a>"
-    return "User nahi mila! <a href='/admin'>Go Back</a>"
+    if target_user not in users_db:
+        return f"User nahi mila: {target_user} <br> <a href='/admin'>Go Back</a>"
+
+    # Update in-memory database
+    users_db[target_user]["credits"] += amount
+    new_credits = users_db[target_user]["credits"]
+
+    # Update MongoDB
+    try:
+        users_collection.update_one(
+            {'username': target_user},
+            {'$set': {'credits': new_credits}}
+        )
+        app.logger.info(f"Updated {target_user} credits in MongoDB to {new_credits}")
+    except Exception as e:
+        app.logger.error(f"Failed to update MongoDB: {e}")
+
+    return f"✅ Success! {target_user} ke naye credits: {new_credits} <br> <a href='/admin'>Go Back</a>"
 
 if __name__ == '__main__':
     app.run(debug=True)

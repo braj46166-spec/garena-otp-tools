@@ -3,30 +3,90 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .user-list table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .user-list th, .user-list td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .user-list th {
+            background-color: #333;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .user-list tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .credit-form {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .credit-form input {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .credit-form button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .credit-form button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
     <div class="card admin-card">
         <h1>Admin Panel</h1>
-        <p>Send credits to registered users</p>
+        <p>Manage user credits and registrations</p>
 
-        <form action="/add_credit" method="POST">
-            <input type="text" name="target_user" placeholder="Target Username" required>
-            <input type="number" name="amount" placeholder="Credit Amount" required>
+        <h2>Quick Add Credits</h2>
+        <form action="/add_credit" method="POST" style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" name="target_user" placeholder="Username" required style="flex: 1; padding: 10px;">
+            <input type="number" name="amount" placeholder="Amount" required style="width: 100px; padding: 10px;">
             <button type="submit" class="login-btn">➕ Add Credits</button>
         </form>
 
-        <h2>Registered Users</h2>
+        <h2>Registered Users ({{ users|length }} total)</h2>
         <div class="user-list">
             {% if users %}
                 <table>
                     <tr>
                         <th>Username</th>
-                        <th>Credits</th>
+                        <th>Current Credits</th>
+                        <th>Action</th>
                     </tr>
                     {% for username, data in users.items() %}
                     <tr>
-                        <td>{{ username }}</td>
+                        <td><strong>{{ username }}</strong></td>
                         <td>{{ data.credits }}</td>
+                        <td>
+                            <form action="/add_credit" method="POST" class="credit-form">
+                                <input type="hidden" name="target_user" value="{{ username }}">
+                                <input type="number" name="amount" placeholder="Credits" value="10" min="1" required>
+                                <button type="submit">Add</button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -36,11 +96,11 @@
         </div>
 
         <br>
-        <a href="/" class="link-button">Back to Login</a>
+        <a href="/" class="link-button">🔐 Back to Login</a>
 
         <div class="social">
             <button class="wa" onclick="window.location.href='https://wa.me/918709353461'">💬 WhatsApp</button>
-            <button class="tg" onclick="window.location.href='https://t.me/xnitehere'">✈️ Telegram</button>
+            <button class="tg" onclick="window.location.href='https://t.me/@xnitehere'">✈️ Telegram</button>
         </div>
         <div class="contact">Contact: 918709353461 | @xnitehere</div>
     </div>
