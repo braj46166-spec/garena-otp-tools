@@ -93,14 +93,13 @@ def send_code():
     if user["credits"] <= 0:
         return "No credits available. <a href='/dashboard?username={0}&credits=0'>Go Back</a>".format(username)
 
-    # Decrement credit immediately when code is sent
-    user["credits"] -= 1
-
-    # Send external request after decrementing (do not restore credits on failure)
+    # Send external request first and decrement only on success
     try:
-        requests.get(f"{EXTERNAL_OTP_API}/{email}", timeout=15)
+        response = requests.get(f"{EXTERNAL_OTP_API}/{email}", timeout=15)
+        if response.status_code == 200:
+            user["credits"] -= 1
     except Exception:
-        # External API failed or timed out; credits remain decremented per requirement
+        # External API failed or timed out; do not decrement credits
         pass
 
     return redirect(url_for('dashboard', username=username, credits=user["credits"]))
@@ -143,9 +142,6 @@ def api_send_otp(email=None):
             "credits": user["credits"]
         })
 
-    # Decrement credit immediately when request is received
-    user["credits"] -= 1
-
     try:
         external_response = requests.get(f"{EXTERNAL_OTP_API}/{email}", timeout=15)
         # try to parse JSON, but handle non-JSON gracefully
@@ -156,7 +152,7 @@ def api_send_otp(email=None):
 
         app.logger.debug("External OTP response: %s %s", external_response.status_code, external_data)
     except Exception:
-        # External API not reachable; credits remain decremented
+        # External API failed or timed out; do not decrement credits
         return jsonify({
             "message": "External OTP API not reachable",
             "success": False,
@@ -171,6 +167,7 @@ def api_send_otp(email=None):
 
     # Treat HTTP 200 as success (some external APIs return different status fields)
     if external_response.status_code == 200:
+        user["credits"] -= 1
         return jsonify({
             "message": external_message,
             "success": True,
