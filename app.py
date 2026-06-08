@@ -193,7 +193,7 @@ def api_send_otp(email=None):
     if is_external_success:
         user["credits"] -= 1
         return jsonify({
-            "message": external_message,
+            "message": "SUCCESS",
             "success": True,
             "status": "success",
             "result": "SUCCESS",
@@ -203,9 +203,9 @@ def api_send_otp(email=None):
         })
 
     return jsonify({
-        "message": external_message,
+        "message": "ERROR",
         "success": False,
-        "status": external_status or 'error',
+        "status": "error",
         "result": "ERROR",
         "credits": user["credits"]
     })
