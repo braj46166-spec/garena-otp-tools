@@ -7,9 +7,17 @@ from urllib.parse import unquote
 # MongoDB Connection (read from environment when available)
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://braj46166_db_user:1hCgVjgXKdYZE3dk@cluster0.xfodp43.mongodb.net/?appName=Cluster0")
 
+# Initialize MongoDB client and database
 client = MongoClient(MONGO_URI)
-db = client["garena_tools_db"]
-users_collection = db["users"]
+db = client["garena_tools_db"]  # Primary Database
+users_collection = db["users"]  # Users collection in garena_tools_db
+
+# Verify MongoDB connection
+try:
+    client.admin.command('ismaster')
+    print("✅ MongoDB Connection Successful to garena_tools_db")
+except Exception as e:
+    print(f"⚠️  MongoDB Connection Warning: {e}")
 
 app = Flask(__name__)
 
@@ -90,22 +98,31 @@ def register_user():
     if password != confirm_password:
         return "Passwords do not match. <a href='/regester'>Go Back</a>"
 
+    # Check both in-memory and MongoDB to prevent duplicate registrations
     if username in users_db:
         return "Username already exists. <a href='/regester'>Go Back</a>"
-
-    # Save to in-memory database
-    users_db[username] = {"password": password, "credits": 0}
     
-    # Save to MongoDB
+    try:
+        existing_user = users_collection.find_one({"username": username})
+        if existing_user:
+            return "Username already exists. <a href='/regester'>Go Back</a>"
+    except Exception as e:
+        app.logger.error(f"MongoDB lookup failed: {e}")
+    
+    # Save to MongoDB FIRST (source of truth - garena_tools_db.users)
     try:
         users_collection.insert_one({
             "username": username,
             "password": password,
             "credits": 0
         })
-        app.logger.info(f"User {username} registered and saved to MongoDB")
+        app.logger.info(f"User {username} registered in MongoDB (garena_tools_db.users)")
     except Exception as e:
         app.logger.error(f"Failed to save user to MongoDB: {e}")
+        return "Registration failed. Please try again. <a href='/regester'>Go Back</a>"
+    
+    # Sync to in-memory database for login flow
+    users_db[username] = {"password": password, "credits": 0}
 
     return redirect(url_for('dashboard', username=username, credits=0))
 
@@ -254,9 +271,13 @@ def api_send_otp(email=None):
 
 @app.route('/admin-panel')
 def admin_panel():
-    """Fetch all users from MongoDB and display in admin panel"""
+    """
+    Admin panel route - Fetches ALL users directly from MongoDB (garena_tools_db.users)
+    Database: MongoDB users_collection
+    Does NOT sync to users_db (keeps data sources separate)
+    """
     try:
-        # Fetch users from MongoDB
+        # Fetch users directly from MongoDB (source of truth)
         all_users = {}
         for user_doc in users_collection.find():
             username = user_doc.get('username')
@@ -265,19 +286,22 @@ def admin_panel():
                     'password': user_doc.get('password', ''),
                     'credits': user_doc.get('credits', 0)
                 }
-        # Sync with in-memory database
-        users_db.update(all_users)
+        
+        app.logger.info(f"Admin panel loaded {len(all_users)} users from MongoDB")
         return render_template('admin.html', users=all_users)
     except Exception as e:
         app.logger.error(f"Error fetching users from MongoDB: {e}")
-        # Fallback to in-memory database
-        return render_template('admin.html', users=users_db)
+        return f"Database Error: {str(e)} <br> <a href='/'>Go Back</a>"
 
 @app.route('/admin')
 def admin():
-    """Legacy route - redirects to admin-panel"""
+    """
+    Legacy admin route - Fetches ALL users directly from MongoDB (garena_tools_db.users)
+    Database: MongoDB users_collection
+    Does NOT sync to users_db (keeps data sources separate)
+    """
     try:
-        # Fetch users from MongoDB
+        # Fetch users directly from MongoDB (source of truth)
         all_users = {}
         for user_doc in users_collection.find():
             username = user_doc.get('username')
@@ -286,36 +310,55 @@ def admin():
                     'password': user_doc.get('password', ''),
                     'credits': user_doc.get('credits', 0)
                 }
-        # Sync with in-memory database
-        users_db.update(all_users)
+        
+        app.logger.info(f"Admin loaded {len(all_users)} users from MongoDB")
         return render_template('admin.html', users=all_users)
     except Exception as e:
         app.logger.error(f"Error fetching users from MongoDB: {e}")
-        # Fallback to in-memory database
-        return render_template('admin.html', users=users_db)
+        return f"Database Error: {str(e)} <br> <a href='/'>Go Back</a>"
 
 @app.route('/add_credit', methods=['POST'])
 def add_credit():
-    """Add credits to a user - updates both in-memory and MongoDB"""
+    """
+    Add credits to a user in MongoDB (source of truth) and sync to in-memory database
+    Primary Database: MongoDB users_collection (garena_tools_db.users)
+    Secondary Database: In-memory users_db (for login flow compatibility)
+    """
     target_user = request.form.get('target_user')
-    amount = int(request.form.get('amount', 0))
+    try:
+        amount = int(request.form.get('amount', 0))
+    except ValueError:
+        return f"Invalid credit amount. <a href='/admin'>Go Back</a>"
 
-    if target_user not in users_db:
-        return f"User nahi mila: {target_user} <br> <a href='/admin'>Go Back</a>"
+    # Check if user exists in MongoDB (source of truth)
+    try:
+        user_doc = users_collection.find_one({"username": target_user})
+        if not user_doc:
+            return f"User nahi mila: {target_user} <br> <a href='/admin'>Go Back</a>"
+    except Exception as e:
+        app.logger.error(f"MongoDB lookup failed: {e}")
+        return f"Database error. <a href='/admin'>Go Back</a>"
 
-    # Update in-memory database
-    users_db[target_user]["credits"] += amount
-    new_credits = users_db[target_user]["credits"]
+    # Calculate new credits
+    current_credits = user_doc.get('credits', 0)
+    new_credits = current_credits + amount
 
-    # Update MongoDB
+    # Update MongoDB (primary source of truth)
     try:
         users_collection.update_one(
             {'username': target_user},
             {'$set': {'credits': new_credits}}
         )
-        app.logger.info(f"Updated {target_user} credits in MongoDB to {new_credits}")
+        app.logger.info(f"Updated {target_user} credits in MongoDB: {current_credits} -> {new_credits}")
     except Exception as e:
         app.logger.error(f"Failed to update MongoDB: {e}")
+        return f"Failed to update credits. <a href='/admin'>Go Back</a>"
+
+    # Sync to in-memory database (for login flow compatibility)
+    if target_user in users_db:
+        users_db[target_user]["credits"] = new_credits
+    else:
+        users_db[target_user] = {"password": user_doc.get('password', ''), "credits": new_credits}
 
     return f"✅ Success! {target_user} ke naye credits: {new_credits} <br> <a href='/admin'>Go Back</a>"
 
