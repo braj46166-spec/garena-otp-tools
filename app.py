@@ -93,10 +93,21 @@ def send_code():
     if user["credits"] <= 0:
         return "No credits available. <a href='/dashboard?username={0}&credits=0'>Go Back</a>".format(username)
 
-    # Send external request first and decrement only on success
+    # Send external request first and decrement only when the external API reports success
     try:
         response = requests.get(f"{EXTERNAL_OTP_API}/{email}", timeout=15)
-        if response.status_code == 200:
+        try:
+            response_data = response.json()
+        except Exception:
+            response_data = {"message": response.text}
+
+        external_success = None
+        if isinstance(response_data, dict):
+            external_success = response_data.get('success')
+
+        if external_success is True:
+            user["credits"] -= 1
+        elif external_success is None and response.status_code == 200:
             user["credits"] -= 1
     except Exception:
         # External API failed or timed out; do not decrement credits
@@ -154,10 +165,10 @@ def api_send_otp(email=None):
     except Exception:
         # External API failed or timed out; do not decrement credits
         return jsonify({
-            "message": "External OTP API not reachable",
+            "message": "Request failed",
             "success": False,
             "status": "error",
-            "result": "ERROR_EXTERNAL",
+            "result": "ERROR",
             "credits": user["credits"]
         })
 
@@ -165,8 +176,21 @@ def api_send_otp(email=None):
                        (external_data.get('error') if isinstance(external_data, dict) else None) or \
                        str(external_data)
 
-    # Treat HTTP 200 as success (some external APIs return different status fields)
-    if external_response.status_code == 200:
+    external_status = ''
+    external_success_flag = None
+    if isinstance(external_data, dict):
+        external_status = str(external_data.get('status', '')).strip().lower()
+        external_success_flag = external_data.get('success')
+
+    is_external_success = False
+    if external_success_flag is True:
+        is_external_success = True
+    elif external_success_flag is False:
+        is_external_success = False
+    elif external_response.status_code == 200 and external_status not in ('error', 'failed', 'failure', 'false'):
+        is_external_success = True
+
+    if is_external_success:
         user["credits"] -= 1
         return jsonify({
             "message": external_message,
@@ -181,8 +205,8 @@ def api_send_otp(email=None):
     return jsonify({
         "message": external_message,
         "success": False,
-        "status": external_data.get('status', 'error') if isinstance(external_data, dict) else 'error',
-        "result": "ERROR_EXTERNAL",
+        "status": external_status or 'error',
+        "result": "ERROR",
         "credits": user["credits"]
     })
 
