@@ -13,6 +13,7 @@ body {
     padding: 30px;
     border-radius: 20px;
     width: 320px;
+    max-width: 95%;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
@@ -144,6 +145,37 @@ button.login-btn:hover,
 .logout-btn:hover,
 .social button:hover {
     opacity: 0.95;
+}
+
+@media (max-width: 600px) {
+    body {
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .card {
+        width: 95%;
+        padding: 24px;
+        margin: 0 auto;
+    }
+
+    .toggle-buttons button,
+    input,
+    button.login-btn,
+    .social button {
+        font-size: 18px;
+    }
+
+    input,
+    .toggle-buttons button,
+    button.login-btn,
+    .social button {
+        padding: 14px;
+    }
+
+    .contact {
+        font-size: 14px;
+    }
 }
 
 .user-list {
