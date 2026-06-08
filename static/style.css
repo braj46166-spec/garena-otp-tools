@@ -55,7 +55,19 @@ input {
     font-weight: bold;
 }
 .social { display: flex; gap: 10px; margin-top: 20px; }
-.social button { flex: 1; padding: 10px; border: none; border-radius: 8px; color: white; cursor: pointer; }
+.social button,
+.social a.tg {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
 .wa { background: #25d366; }
 .tg { background: #0088cc; }
 .contact { margin-top: 20px; font-size: 12px; color: #666; }
