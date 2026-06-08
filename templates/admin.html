@@ -53,6 +53,36 @@
         .credit-form button:hover {
             background-color: #45a049;
         }
+
+        .quick-add-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .quick-add-input {
+            flex: 2;
+            min-width: 240px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #0f1422;
+            color: white;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .quick-add-amount {
+            width: 110px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #0f1422;
+            color: white;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -61,9 +91,9 @@
         <p>Manage user credits and registrations</p>
 
         <h2>Quick Add Credits</h2>
-        <form action="/add_credit" method="POST" style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <input type="text" name="target_user" placeholder="Username" required style="flex: 1; padding: 10px;">
-            <input type="number" name="amount" placeholder="Amount" required style="width: 100px; padding: 10px;">
+        <form action="/add_credit" method="POST" class="quick-add-form">
+            <input type="text" name="target_user" placeholder="Username" required class="quick-add-input">
+            <input type="number" name="amount" placeholder="Amount" required class="quick-add-amount">
             <button type="submit" class="login-btn">➕ Add Credits</button>
         </form>
 
