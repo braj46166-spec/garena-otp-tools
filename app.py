@@ -2,6 +2,7 @@ import os
 import requests
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from pymongo import MongoClient
+from urllib.parse import unquote
 
 # MongoDB Connection (read from environment when available)
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://braj46166_db_user:1hCgVjgXKdYZE3dk@cluster0.xfodp43.mongodb.net/?appName=Cluster0")
@@ -120,6 +121,12 @@ def send_code():
 def api_send_otp(email=None):
     username = request.args.get('username')
     email = email or request.args.get('email')
+    
+    # Decode URL-encoded email
+    if email:
+        email = unquote(email)
+    
+    app.logger.info(f"API called: email={email}, username={username}")
 
     if not email:
         return jsonify({
@@ -161,7 +168,7 @@ def api_send_otp(email=None):
         except Exception:
             external_data = {"message": external_response.text}
 
-        app.logger.debug("External OTP response: %s %s", external_response.status_code, external_data)
+        app.logger.info(f"External API response: status={external_response.status_code}, data={external_data}")
     except Exception:
         # External API failed or timed out; do not decrement credits
         return jsonify({
@@ -181,14 +188,21 @@ def api_send_otp(email=None):
     if isinstance(external_data, dict):
         external_status = str(external_data.get('status', '')).strip().lower()
         external_success_flag = external_data.get('success')
+    
+    app.logger.info(f"Parsed: external_success_flag={external_success_flag}, external_status={external_status}")
 
     is_external_success = False
     if external_success_flag is True:
         is_external_success = True
+        app.logger.info("Success detected: external_success_flag is True")
     elif external_success_flag is False:
         is_external_success = False
+        app.logger.info("Failure detected: external_success_flag is False")
     elif external_response.status_code == 200 and external_status not in ('error', 'failed', 'failure', 'false'):
         is_external_success = True
+        app.logger.info(f"Success detected: status_code={external_response.status_code}, status={external_status}")
+    else:
+        app.logger.info(f"Failure: status_code={external_response.status_code}, status={external_status}, success_flag={external_success_flag}")
 
     if is_external_success:
         user["credits"] -= 1
