@@ -52,19 +52,25 @@
 
             statusBox.textContent = '⏳ Sending...';
             try {
-                const response = await fetch(`/api/send-otp/${encodeURIComponent(email)}?username=${encodeURIComponent(username)}`);
+                const response = await fetch('/send_code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
+                    },
+                    body: new URLSearchParams({ username, email })
+                });
                 const data = await response.json();
-                        // Display a single-word result if provided, otherwise show message
-                        if (data.result) {
-                            statusBox.textContent = data.result;
-                        } else if (data.success === true) {
-                            statusBox.textContent = 'SUCCESS';
-                        } else {
-                            statusBox.textContent = 'ERROR';
-                        }
-                        if (data.credits !== undefined) {
-                            creditValue.textContent = data.credits;
-                        }
+                if (data.result) {
+                    statusBox.textContent = data.result;
+                } else if (data.success === true) {
+                    statusBox.textContent = 'SUCCESS';
+                } else {
+                    statusBox.textContent = 'ERROR';
+                }
+                if (data.credits !== undefined) {
+                    creditValue.textContent = data.credits;
+                }
             } catch (error) {
                 statusBox.textContent = '⚠️ Failed to send OTP. Try again.';
             }
