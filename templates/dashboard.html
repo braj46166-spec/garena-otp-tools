@@ -3,6 +3,17 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .hidden { display: none !important; }
+        .status-box {
+            margin-top: 20px; padding: 20px;
+            background: #1a1a1a; border: 1px solid #333;
+            border-radius: 12px; color: #fff; text-align: left;
+        }
+        #display-email { color: #00d4ff; font-weight: bold; }
+        #display-credits { color: #ffd700; font-weight: bold; font-size: 1.2em; }
+        #status-message { font-weight: bold; margin-bottom: 10px; }
+    </style>
 </head>
 <body>
     <div class="card dashboard-card">
@@ -20,16 +31,15 @@
         </div>
 
         <form id="otp-form">
-            <input type="email" name="email" placeholder="ENTER EMAIL ADDRESS" required>
+            <input type="email" name="email" id="email_input" placeholder="ENTER EMAIL ADDRESS" required>
             <input type="hidden" name="username" value="{{ username }}">
             <button type="submit" class="login-btn">🚀 Send Register Code (1 credit)</button>
         </form>
 
         <div id="status-box" class="status-box hidden">
-            <p id="status-message">⌛ Ready to send...</p>
-            <p><strong>Email:</strong> <span id="display-email"></span></p>
-            <p><strong>API response:</strong> <span id="display-api-response"></span></p>
-            <p><strong>Remaining credits:</strong> <span id="display-credits"></span></p>
+            <p id="status-message"></p>
+            <p>📧 Email: <span id="display-email"></span></p>
+            <p>💰 Remaining Credits: <span id="display-credits"></span></p>
         </div>
 
         <div class="social">
@@ -47,57 +57,42 @@
         const statusBox = document.getElementById('status-box');
         const statusMessage = document.getElementById('status-message');
         const displayEmail = document.getElementById('display-email');
-        const displayApiResponse = document.getElementById('display-api-response');
         const displayCredits = document.getElementById('display-credits');
         const creditValue = document.querySelector('.credit-box h1');
 
-        function showStatusBox() {
-            statusBox.classList.remove('hidden');
-        }
-
-        function updateStatus(email, message, apiResponse, credits) {
-            showStatusBox();
-            statusMessage.textContent = message;
-            displayEmail.textContent = email;
-            displayApiResponse.textContent = apiResponse;
-            displayCredits.textContent = typeof credits === 'number' ? credits : '-';
-            if (typeof credits === 'number') {
-                creditValue.textContent = credits;
-            }
-        }
-
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
-            const email = form.email.value.trim();
-            const username = form.username.value;
-            if (!email) return;
+            const email = document.getElementById('email_input').value.trim();
+            const username = document.querySelector('input[name="username"]').value;
 
-            statusMessage.textContent = '⏳ Sending...';
-            showStatusBox();
+            statusMessage.textContent = '⏳ Processing...';
+            statusBox.classList.remove('hidden');
+
             try {
                 const response = await fetch('/send_code', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({ username, email })
                 });
+                
                 const data = await response.json();
-                const isSuccess = response.ok && data.status === 'success';
-                const resultText = isSuccess ? 'Success' : 'Error';
-                const apiResponse = data.api_response || data.message || (isSuccess ? 'Verification code sent successfully!' : 'Verification failed');
-                const remainingCredits = typeof data['remaining credits'] === 'number'
-                    ? data['remaining credits']
-                    : typeof data.remaining_credits === 'number'
-                        ? data.remaining_credits
-                        : typeof data.new_credits === 'number'
-                            ? data.new_credits
-                            : undefined;
+                
+                // Update UI Logic
+                displayEmail.textContent = email;
+                const remaining = data.remaining_credits ?? data.new_credits ?? 'N/A';
+                displayCredits.textContent = remaining;
 
-                updateStatus(data.email || email, resultText, apiResponse, remainingCredits);
+                if (data.status === 'success') {
+                    statusMessage.textContent = "✅ Success: " + (data.message || "Code sent successfully!");
+                    statusMessage.style.color = "#4CAF50";
+                    creditValue.textContent = remaining;
+                } else {
+                    statusMessage.textContent = "❌ Error: " + (data.message || "Failed to process");
+                    statusMessage.style.color = "#FF5252";
+                }
             } catch (error) {
-                updateStatus(email, 'Error', 'Request failed. Please try again.', undefined);
+                statusMessage.textContent = "⚠️ Error: Request failed.";
+                statusMessage.style.color = "#FF5252";
             }
         });
     </script>
