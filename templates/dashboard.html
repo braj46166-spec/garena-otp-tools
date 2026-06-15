@@ -25,8 +25,10 @@
             <button type="submit" class="login-btn">🚀 Send Register Code (1 credit)</button>
         </form>
 
-        <div id="status-box" class="status-box">
-            ⌛ Ready to send...
+        <div id="status-box" class="status-box hidden">
+            <p id="status-message">⌛ Ready to send...</p>
+            <p><strong>Email sent:</strong> <span id="display-email"></span></p>
+            <p><strong>Remaining credits:</strong> <span id="display-credits"></span></p>
         </div>
 
         <div class="social">
@@ -42,7 +44,22 @@
     <script>
         const form = document.getElementById('otp-form');
         const statusBox = document.getElementById('status-box');
+        const statusMessage = document.getElementById('status-message');
+        const displayEmail = document.getElementById('display-email');
+        const displayCredits = document.getElementById('display-credits');
         const creditValue = document.querySelector('.credit-box h1');
+
+        function showStatusBox() {
+            statusBox.classList.remove('hidden');
+        }
+
+        function updateStatus(email, credits, message) {
+            showStatusBox();
+            statusMessage.textContent = message;
+            displayEmail.textContent = email;
+            displayCredits.textContent = credits;
+            creditValue.textContent = credits;
+        }
 
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -50,7 +67,8 @@
             const username = form.username.value;
             if (!email) return;
 
-            statusBox.textContent = '⏳ Sending...';
+            statusMessage.textContent = '⏳ Sending...';
+            showStatusBox();
             try {
                 const response = await fetch('/send_code', {
                     method: 'POST',
@@ -62,13 +80,16 @@
                 });
                 const data = await response.json();
                 const isSuccess = response.ok && data.status === 'success';
+                const message = data.message || (isSuccess ? '✅ Code sent successfully' : '⚠️ Failed to send code');
+                const remainingCredits = typeof data.remaining_credits === 'number' ? data.remaining_credits : data.new_credits;
 
-                statusBox.textContent = data.message || (isSuccess ? '✅ Code sent successfully' : '⚠️ Failed to send code');
-                if (typeof data.new_credits === 'number') {
-                    creditValue.textContent = data.new_credits;
+                if (isSuccess && typeof remainingCredits === 'number') {
+                    updateStatus(data.email || email, remainingCredits, message);
+                } else {
+                    statusMessage.textContent = message;
                 }
             } catch (error) {
-                statusBox.textContent = '⚠️ Request failed. Please try again.';
+                statusMessage.textContent = '⚠️ Request failed. Please try again.';
             }
         });
     </script>
