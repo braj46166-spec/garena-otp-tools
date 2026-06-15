@@ -172,8 +172,11 @@ def send_code():
             return jsonify({
                 "status": "error",
                 "message": response_data.get('message', 'Failed to send OTP') if isinstance(response_data, dict) else 'Failed to send OTP',
+                "api_response": response_data.get('message') if isinstance(response_data, dict) else response.text,
                 "email": email,
-                "new_credits": current_credits
+                "new_credits": current_credits,
+                "remaining_credits": current_credits,
+                "remaining credits": current_credits
             }), 400
 
         try:
@@ -195,6 +198,7 @@ def send_code():
         return jsonify({
             "status": "success",
             "message": response_data.get('message', 'Code sent successfully') if isinstance(response_data, dict) else 'Code sent successfully',
+            "api_response": response_data.get('message') if isinstance(response_data, dict) else response.text,
             "email": email,
             "new_credits": current_credits,
             "remaining_credits": current_credits,

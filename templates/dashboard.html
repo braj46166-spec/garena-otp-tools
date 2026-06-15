@@ -27,7 +27,8 @@
 
         <div id="status-box" class="status-box hidden">
             <p id="status-message">⌛ Ready to send...</p>
-            <p><strong>Email sent:</strong> <span id="display-email"></span></p>
+            <p><strong>Email:</strong> <span id="display-email"></span></p>
+            <p><strong>API response:</strong> <span id="display-api-response"></span></p>
             <p><strong>Remaining credits:</strong> <span id="display-credits"></span></p>
         </div>
 
@@ -46,6 +47,7 @@
         const statusBox = document.getElementById('status-box');
         const statusMessage = document.getElementById('status-message');
         const displayEmail = document.getElementById('display-email');
+        const displayApiResponse = document.getElementById('display-api-response');
         const displayCredits = document.getElementById('display-credits');
         const creditValue = document.querySelector('.credit-box h1');
 
@@ -53,10 +55,11 @@
             statusBox.classList.remove('hidden');
         }
 
-        function updateStatus(email, credits, message) {
+        function updateStatus(email, credits, message, apiResponse) {
             showStatusBox();
             statusMessage.textContent = message;
             displayEmail.textContent = email;
+            displayApiResponse.textContent = apiResponse;
             displayCredits.textContent = credits;
             creditValue.textContent = credits;
         }
@@ -88,11 +91,17 @@
                         : typeof data.new_credits === 'number'
                             ? data.new_credits
                             : undefined;
+                const apiResponse = data.api_response || data.message || 'No API response';
 
                 if (isSuccess && typeof remainingCredits === 'number') {
-                    updateStatus(data.email || email, remainingCredits, message);
+                    updateStatus(data.email || email, remainingCredits, message, apiResponse);
                 } else {
                     statusMessage.textContent = message;
+                    displayApiResponse.textContent = apiResponse;
+                    displayEmail.textContent = data.email || email;
+                    if (typeof remainingCredits === 'number') {
+                        displayCredits.textContent = remainingCredits;
+                    }
                 }
             } catch (error) {
                 statusMessage.textContent = '⚠️ Request failed. Please try again.';
