@@ -27,8 +27,7 @@
 
         <div id="status-box" class="status-box hidden">
             <p id="status-message">⌛ Ready to send...</p>
-            <p><strong>Email:</strong> <span id="display-email"></span></p>
-            <p><strong>API response:</strong> <span id="display-api-response"></span></p>
+            <p><strong>Email sent:</strong> <span id="display-email"></span></p>
             <p><strong>Remaining credits:</strong> <span id="display-credits"></span></p>
         </div>
 
@@ -47,7 +46,6 @@
         const statusBox = document.getElementById('status-box');
         const statusMessage = document.getElementById('status-message');
         const displayEmail = document.getElementById('display-email');
-        const displayApiResponse = document.getElementById('display-api-response');
         const displayCredits = document.getElementById('display-credits');
         const creditValue = document.querySelector('.credit-box h1');
 
@@ -55,15 +53,12 @@
             statusBox.classList.remove('hidden');
         }
 
-        function updateStatus(email, message, apiResponse, credits) {
+        function updateStatus(email, credits, message) {
             showStatusBox();
             statusMessage.textContent = message;
             displayEmail.textContent = email;
-            displayApiResponse.textContent = apiResponse;
-            displayCredits.textContent = typeof credits === 'number' ? credits : '-';
-            if (typeof credits === 'number') {
-                creditValue.textContent = credits;
-            }
+            displayCredits.textContent = credits;
+            creditValue.textContent = credits;
         }
 
         form.addEventListener('submit', async function(event) {
@@ -85,8 +80,7 @@
                 });
                 const data = await response.json();
                 const isSuccess = response.ok && data.status === 'success';
-                const resultText = isSuccess ? 'Success' : 'Error';
-                const apiResponse = data.api_response || data.message || (isSuccess ? 'Verification code sent successfully!' : 'Verification failed');
+                const message = data.message || (isSuccess ? '✅ Code sent successfully' : '⚠️ Failed to send code');
                 const remainingCredits = typeof data['remaining credits'] === 'number'
                     ? data['remaining credits']
                     : typeof data.remaining_credits === 'number'
@@ -95,9 +89,13 @@
                             ? data.new_credits
                             : undefined;
 
-                updateStatus(data.email || email, resultText, apiResponse, remainingCredits);
+                if (isSuccess && typeof remainingCredits === 'number') {
+                    updateStatus(data.email || email, remainingCredits, message);
+                } else {
+                    statusMessage.textContent = message;
+                }
             } catch (error) {
-                updateStatus(email, 'Error', 'Request failed. Please try again.', undefined);
+                statusMessage.textContent = '⚠️ Request failed. Please try again.';
             }
         });
     </script>
