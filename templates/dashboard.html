@@ -81,7 +81,13 @@
                 const data = await response.json();
                 const isSuccess = response.ok && data.status === 'success';
                 const message = data.message || (isSuccess ? '✅ Code sent successfully' : '⚠️ Failed to send code');
-                const remainingCredits = typeof data.remaining_credits === 'number' ? data.remaining_credits : data.new_credits;
+                const remainingCredits = typeof data['remaining credits'] === 'number'
+                    ? data['remaining credits']
+                    : typeof data.remaining_credits === 'number'
+                        ? data.remaining_credits
+                        : typeof data.new_credits === 'number'
+                            ? data.new_credits
+                            : undefined;
 
                 if (isSuccess && typeof remainingCredits === 'number') {
                     updateStatus(data.email || email, remainingCredits, message);

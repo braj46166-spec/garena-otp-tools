@@ -119,13 +119,29 @@ input {
 }
 
 .status-box {
-    background: #0f1422;
-    padding: 15px;
-    border-radius: 12px;
-    margin-top: 15px;
-    text-align: center;
-    color: #d1d5db;
-    font-size: 13px;
+    display: none;
+    background: linear-gradient(180deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95));
+    border: 1px solid rgba(99,102,241,0.25);
+    box-shadow: 0 18px 45px rgba(15,23,42,0.35);
+    padding: 18px 20px;
+    border-radius: 18px;
+    margin-top: 18px;
+    text-align: left;
+    color: #e5e7eb;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.status-box.visible {
+    display: block;
+}
+
+.status-box p {
+    margin: 10px 0;
+}
+
+.status-box strong {
+    color: #a5b4fc;
 }
 
 .logout-btn {

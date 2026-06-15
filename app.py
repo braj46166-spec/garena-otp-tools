@@ -196,7 +196,9 @@ def send_code():
             "status": "success",
             "message": response_data.get('message', 'Code sent successfully') if isinstance(response_data, dict) else 'Code sent successfully',
             "email": email,
-            "new_credits": current_credits
+            "new_credits": current_credits,
+            "remaining_credits": current_credits,
+            "remaining credits": current_credits
         }), 200
     except Exception as e:
         app.logger.error(f"OTP send request failed for {username}: {e}")
