@@ -144,14 +144,10 @@ def send_code():
 
     user = users_db.get(username)
     if not user:
-        if request.accept_mimetypes.best == 'application/json':
-            return jsonify({"message": "User not found", "success": False, "status": "error"}), 404
-        return "User not found. <a href='/'>Login</a>"
+        return jsonify({"message": "User not found", "success": False, "status": "error"}), 404
 
     if user["credits"] <= 0:
-        if request.accept_mimetypes.best == 'application/json':
-            return jsonify({"message": "No credits available", "success": False, "status": "error", "credits": user["credits"]}), 400
-        return "No credits available. <a href='/dashboard?username={0}&credits=0'>Go Back</a>".format(username)
+        return jsonify({"message": "No credits available", "success": False, "status": "error", "credits": user["credits"]}), 400
 
     try:
         response = requests.get(EXTERNAL_OTP_API, params={"email": email}, timeout=15)
@@ -164,27 +160,33 @@ def send_code():
         if isinstance(response_data, dict):
             external_success = response_data.get('success')
 
-        if external_success is True:
-            user["credits"] -= 1
-        elif external_success is None and response.status_code == 200:
-            user["credits"] -= 1
+        send_success = external_success is True or (external_success is None and response.status_code == 200)
 
-        if request.accept_mimetypes.best == 'application/json':
-            return jsonify({
-                "message": "SUCCESS" if external_success is not False else "ERROR",
-                "success": external_success is not False,
-                "status": "success" if external_success is not False else "error",
-                "result": "SUCCESS" if external_success is not False else "ERROR",
-                "email": email,
-                "username": username,
-                "credits": user["credits"]
-            })
-    except Exception:
-        if request.accept_mimetypes.best == 'application/json':
-            return jsonify({"message": "Request failed", "success": False, "status": "error", "result": "ERROR", "credits": user["credits"]}), 502
-        pass
+        if send_success:
+            try:
+                result = users_collection.update_one(
+                    {"username": username},
+                    {"$inc": {"credits": -1}}
+                )
+                if result.modified_count == 1:
+                    user["credits"] -= 1
+                else:
+                    app.logger.warning(f"No MongoDB document updated for {username} during credit decrement")
+            except Exception as e:
+                app.logger.error(f"Failed to decrement credits in MongoDB for {username}: {e}")
 
-    return redirect(url_for('dashboard', username=username, credits=user["credits"]))
+        return jsonify({
+            "message": response_data.get('message', 'SUCCESS') if isinstance(response_data, dict) else 'SUCCESS',
+            "success": send_success,
+            "status": "success" if send_success else "error",
+            "result": "SUCCESS" if send_success else "ERROR",
+            "email": email,
+            "username": username,
+            "credits": user["credits"]
+        }), 200 if send_success else 400
+    except Exception as e:
+        app.logger.error(f"OTP send request failed for {username}: {e}")
+        return jsonify({"message": "Request failed", "success": False, "status": "error", "result": "ERROR", "credits": user["credits"]}), 502
 
 @app.route('/admin-panel')
 def admin_panel():

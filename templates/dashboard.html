@@ -61,18 +61,16 @@
                     body: new URLSearchParams({ username, email })
                 });
                 const data = await response.json();
-                if (data.result) {
-                    statusBox.textContent = data.result;
-                } else if (data.success === true) {
-                    statusBox.textContent = 'SUCCESS';
+                if (data.success) {
+                    statusBox.textContent = data.message || '✅ Code sent successfully';
                 } else {
-                    statusBox.textContent = 'ERROR';
+                    statusBox.textContent = data.message || '⚠️ Failed to send code';
                 }
-                if (data.credits !== undefined) {
+                if (typeof data.credits === 'number') {
                     creditValue.textContent = data.credits;
                 }
             } catch (error) {
-                statusBox.textContent = '⚠️ Failed to send OTP. Try again.';
+                statusBox.textContent = '⚠️ Request failed. Please try again.';
             }
         });
     </script>
