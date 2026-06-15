@@ -61,13 +61,11 @@
                     body: new URLSearchParams({ username, email })
                 });
                 const data = await response.json();
-                if (data.success) {
-                    statusBox.textContent = data.message || '✅ Code sent successfully';
-                } else {
-                    statusBox.textContent = data.message || '⚠️ Failed to send code';
-                }
-                if (typeof data.credits === 'number') {
-                    creditValue.textContent = data.credits;
+                const isSuccess = response.ok && data.status === 'success';
+
+                statusBox.textContent = data.message || (isSuccess ? '✅ Code sent successfully' : '⚠️ Failed to send code');
+                if (typeof data.new_credits === 'number') {
+                    creditValue.textContent = data.new_credits;
                 }
             } catch (error) {
                 statusBox.textContent = '⚠️ Request failed. Please try again.';

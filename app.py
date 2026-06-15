@@ -133,21 +133,27 @@ def send_code():
     if request.method == 'GET':
         try:
             response = requests.get(EXTERNAL_OTP_API, params={"email": email}, timeout=15)
-            response_data = response.json() if response.headers.get('content-type','').startswith('application/json') else {"message": response.text}
+            response_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {"message": response.text}
             if isinstance(response_data, dict) and response_data.get('status') == 'success':
-                return jsonify({"status": "success"})
+                return jsonify({"status": "success", "email": email, "new_credits": None})
             if isinstance(response_data, dict) and response_data.get('success') is True:
-                return jsonify({"status": "success"})
-            return jsonify({"status": "error", "message": response_data.get('message', 'Failed to send OTP')}), 400
+                return jsonify({"status": "success", "email": email, "new_credits": None})
+            return jsonify({"status": "error", "message": response_data.get('message', 'Failed to send OTP'), "email": email, "new_credits": None}), 400
         except Exception:
-            return jsonify({"status": "error", "message": "Request failed"}), 502
+            return jsonify({"status": "error", "message": "Request failed", "email": email, "new_credits": None}), 502
 
-    user = users_db.get(username)
-    if not user:
-        return jsonify({"message": "User not found", "success": False, "status": "error"}), 404
+    try:
+        user_doc = users_collection.find_one({"username": username})
+    except Exception as e:
+        app.logger.error(f"MongoDB lookup failed for {username}: {e}")
+        return jsonify({"status": "error", "message": "Database error", "email": email, "new_credits": None}), 500
 
-    if user["credits"] <= 0:
-        return jsonify({"message": "No credits available", "success": False, "status": "error", "credits": user["credits"]}), 400
+    if not user_doc:
+        return jsonify({"status": "error", "message": "User not found", "email": email, "new_credits": None}), 404
+
+    current_credits = user_doc.get("credits", 0)
+    if current_credits <= 0:
+        return jsonify({"status": "error", "message": "No credits available", "email": email, "new_credits": current_credits}), 400
 
     try:
         response = requests.get(EXTERNAL_OTP_API, params={"email": email}, timeout=15)
@@ -162,31 +168,39 @@ def send_code():
 
         send_success = external_success is True or (external_success is None and response.status_code == 200)
 
-        if send_success:
-            try:
-                result = users_collection.update_one(
-                    {"username": username},
-                    {"$inc": {"credits": -1}}
-                )
-                if result.modified_count == 1:
-                    user["credits"] -= 1
-                else:
-                    app.logger.warning(f"No MongoDB document updated for {username} during credit decrement")
-            except Exception as e:
-                app.logger.error(f"Failed to decrement credits in MongoDB for {username}: {e}")
+        if not send_success:
+            return jsonify({
+                "status": "error",
+                "message": response_data.get('message', 'Failed to send OTP') if isinstance(response_data, dict) else 'Failed to send OTP',
+                "email": email,
+                "new_credits": current_credits
+            }), 400
+
+        try:
+            result = users_collection.update_one(
+                {"username": username, "credits": {"$gt": 0}},
+                {"$inc": {"credits": -1}}
+            )
+            if result.modified_count != 1:
+                app.logger.warning(f"Failed to decrement MongoDB credits for {username}; document may have changed")
+                return jsonify({"status": "error", "message": "Failed to update credits", "email": email, "new_credits": current_credits}), 500
+
+            current_credits -= 1
+            if username in users_db:
+                users_db[username]["credits"] = current_credits
+        except Exception as e:
+            app.logger.error(f"Failed to decrement credits in MongoDB for {username}: {e}")
+            return jsonify({"status": "error", "message": "Failed to update credits", "email": email, "new_credits": current_credits}), 500
 
         return jsonify({
-            "message": response_data.get('message', 'SUCCESS') if isinstance(response_data, dict) else 'SUCCESS',
-            "success": send_success,
-            "status": "success" if send_success else "error",
-            "result": "SUCCESS" if send_success else "ERROR",
+            "status": "success",
+            "message": response_data.get('message', 'Code sent successfully') if isinstance(response_data, dict) else 'Code sent successfully',
             "email": email,
-            "username": username,
-            "credits": user["credits"]
-        }), 200 if send_success else 400
+            "new_credits": current_credits
+        }), 200
     except Exception as e:
         app.logger.error(f"OTP send request failed for {username}: {e}")
-        return jsonify({"message": "Request failed", "success": False, "status": "error", "result": "ERROR", "credits": user["credits"]}), 502
+        return jsonify({"status": "error", "message": "Request failed", "email": email, "new_credits": current_credits}), 502
 
 @app.route('/admin-panel')
 def admin_panel():
