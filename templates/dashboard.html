@@ -55,13 +55,15 @@
             statusBox.classList.remove('hidden');
         }
 
-        function updateStatus(email, credits, message, apiResponse) {
+        function updateStatus(email, message, apiResponse, credits) {
             showStatusBox();
             statusMessage.textContent = message;
             displayEmail.textContent = email;
             displayApiResponse.textContent = apiResponse;
-            displayCredits.textContent = credits;
-            creditValue.textContent = credits;
+            displayCredits.textContent = typeof credits === 'number' ? credits : '-';
+            if (typeof credits === 'number') {
+                creditValue.textContent = credits;
+            }
         }
 
         form.addEventListener('submit', async function(event) {
@@ -83,7 +85,8 @@
                 });
                 const data = await response.json();
                 const isSuccess = response.ok && data.status === 'success';
-                const message = data.message || (isSuccess ? '✅ Code sent successfully' : '⚠️ Failed to send code');
+                const resultText = isSuccess ? 'Success' : 'Error';
+                const apiResponse = data.api_response || data.message || (isSuccess ? 'Verification code sent successfully!' : 'Verification failed');
                 const remainingCredits = typeof data['remaining credits'] === 'number'
                     ? data['remaining credits']
                     : typeof data.remaining_credits === 'number'
@@ -91,20 +94,10 @@
                         : typeof data.new_credits === 'number'
                             ? data.new_credits
                             : undefined;
-                const apiResponse = data.api_response || data.message || 'No API response';
 
-                if (isSuccess && typeof remainingCredits === 'number') {
-                    updateStatus(data.email || email, remainingCredits, message, apiResponse);
-                } else {
-                    statusMessage.textContent = message;
-                    displayApiResponse.textContent = apiResponse;
-                    displayEmail.textContent = data.email || email;
-                    if (typeof remainingCredits === 'number') {
-                        displayCredits.textContent = remainingCredits;
-                    }
-                }
+                updateStatus(data.email || email, resultText, apiResponse, remainingCredits);
             } catch (error) {
-                statusMessage.textContent = '⚠️ Request failed. Please try again.';
+                updateStatus(email, 'Error', 'Request failed. Please try again.', undefined);
             }
         });
     </script>
