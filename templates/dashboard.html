@@ -4,11 +4,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .hidden { display: none !important; }
         .status-box {
             margin-top: 20px; padding: 20px;
             background: #1a1a1a; border: 1px solid #333;
             border-radius: 12px; color: #fff; text-align: left;
+            min-height: 120px; /* Box hamesha visible rahega */
         }
         #display-email { color: #00d4ff; font-weight: bold; }
         #display-credits { color: #ffd700; font-weight: bold; font-size: 1.2em; }
@@ -36,10 +36,10 @@
             <button type="submit" class="login-btn">🚀 Send Register Code (1 credit)</button>
         </form>
 
-        <div id="status-box" class="status-box hidden">
-            <p id="status-message"></p>
-            <p>📧 Email: <span id="display-email"></span></p>
-            <p>💰 Remaining Credits: <span id="display-credits"></span></p>
+        <div id="status-box" class="status-box">
+            <p id="status-message">⏳ Waiting for action...</p>
+            <p>📧 Email: <span id="display-email">-</span></p>
+            <p>💰 Remaining Credits: <span id="display-credits">-</span></p>
         </div>
 
         <div class="social">
@@ -54,7 +54,6 @@
 
     <script>
         const form = document.getElementById('otp-form');
-        const statusBox = document.getElementById('status-box');
         const statusMessage = document.getElementById('status-message');
         const displayEmail = document.getElementById('display-email');
         const displayCredits = document.getElementById('display-credits');
@@ -66,7 +65,7 @@
             const username = document.querySelector('input[name="username"]').value;
 
             statusMessage.textContent = '⏳ Processing...';
-            statusBox.classList.remove('hidden');
+            statusMessage.style.color = "#ffffff";
 
             try {
                 const response = await fetch('/send_code', {
@@ -79,7 +78,7 @@
                 
                 // Update UI Logic
                 displayEmail.textContent = email;
-                const remaining = data.remaining_credits ?? data.new_credits ?? 'N/A';
+                const remaining = data.remaining_credits ?? 'N/A';
                 displayCredits.textContent = remaining;
 
                 if (data.status === 'success') {
