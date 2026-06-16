@@ -58,9 +58,12 @@
                 const data = await response.json().catch(() => null);
 
                 if (response.ok && data && data.status === 'success') {
-                    showRegisterStatus('✅ Signup Successful! You can now log in.', false);
-                    // Clear the form but stay on the page so user sees the success message
-                    registerForm.reset();
+                    const usernameVal = registerForm.username.value;
+                    const creditsVal = (data.remaining_credits ?? data.new_credits ?? 0);
+                    showRegisterStatus('✅ Signup Successful! Redirecting to dashboard...', false);
+                    setTimeout(() => {
+                        window.location.href = `/dashboard?username=${encodeURIComponent(usernameVal)}&credits=${encodeURIComponent(creditsVal)}`;
+                    }, 1000);
                     return;
                 }
 
