@@ -140,6 +140,44 @@ input {
     margin: 10px 0;
 }
 
+.response-box {
+    display: none;
+    background: #111827;
+    border: 1px solid rgba(107,114,128,0.35);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+    padding: 18px 20px;
+    border-radius: 18px;
+    margin-top: 18px;
+    text-align: left;
+    color: #e5e7eb;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+}
+
+.response-box.hidden {
+    display: none;
+}
+
+.response-title {
+    margin: 0 0 10px;
+    font-size: 14px;
+    color: #93c5fd;
+    font-weight: 700;
+}
+
+.response-box pre {
+    margin: 0;
+    padding: 12px;
+    background: rgba(15,23,42,0.9);
+    border-radius: 12px;
+    color: #e5e7eb;
+    font-size: 13px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .status-box strong {
     color: #a5b4fc;
 }
