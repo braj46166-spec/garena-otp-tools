@@ -11,17 +11,54 @@
             <button onclick="window.location.href='/'">🔑 Login</button>
             <button class="active">✨ Sign Up</button>
         </div>
-        <form action="/register_user" method="POST">
+        <form id="register-form" action="/register_user" method="POST">
             <input type="text" name="username" placeholder="USERNAME" required>
             <input type="password" name="password" placeholder="PASSWORD" required>
             <input type="password" name="confirm_password" placeholder="CONFIRM PASSWORD" required>
             <button type="submit" class="login-btn">✨ Sign Up</button>
         </form>
+
+        <div id="register-response-box" class="response-box hidden">
+            <p class="response-title">API Response</p>
+            <pre id="register-response-content">Waiting for response...</pre>
+        </div>
+
         <div class="social">
             <button class="wa" onclick="window.location.href='https://wa.me/918709353461'">💬 WhatsApp</button>
             <a href="https://t.me/xnitehere" target="_blank" class="tg">✈️ Telegram</a>
         </div>
         <div class="contact">Contact for credits: 918709353461 | @xnitehere</div>
     </div>
+
+    <script>
+        const registerForm = document.getElementById('register-form');
+        const registerResponseBox = document.getElementById('register-response-box');
+        const registerResponseContent = document.getElementById('register-response-content');
+
+        function showRegisterResponse() {
+            registerResponseBox.classList.remove('hidden');
+        }
+
+        registerForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(registerForm);
+            const body = new URLSearchParams(formData);
+
+            registerResponseContent.textContent = '⏳ Sending registration...';
+            showRegisterResponse();
+
+            try {
+                const response = await fetch(registerForm.action, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body
+                });
+                const data = await response.json();
+                registerResponseContent.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                registerResponseContent.textContent = error.message || '⚠️ Request failed.';
+            }
+        });
+    </script>
 </body>
 </html>
