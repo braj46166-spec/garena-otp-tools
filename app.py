@@ -22,8 +22,7 @@ app = Flask(__name__)
 
 # Simple in-memory user database
 users_db = {
-    "mansuk444": {"password": "1234", "credits": 300},
-    "user2": {"password": "pass123", "credits": 50}
+    # In-memory users (keep admin synced from MongoDB). Hardcoded test users removed.
 }
 
 # Read admin credentials from environment with fallbacks
