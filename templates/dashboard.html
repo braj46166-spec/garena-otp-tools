@@ -31,10 +31,7 @@
             <p><strong>Remaining credits:</strong> <span id="display-credits"></span></p>
         </div>
 
-        <div id="api-response-box" class="response-box hidden">
-            <p class="response-title">API Response</p>
-            <pre id="api-response-content">Waiting for response...</pre>
-        </div>
+        
 
         <div class="social">
             <button class="wa" onclick="window.location.href='https://wa.me/918709353461'">💬 WhatsApp</button>
@@ -67,18 +64,7 @@
             creditValue.textContent = credits;
         }
 
-        const apiResponseBox = document.getElementById('api-response-box');
-        const apiResponseContent = document.getElementById('api-response-content');
-
-        function showApiResponseBox() {
-            apiResponseBox.classList.remove('hidden');
-            apiResponseBox.classList.add('visible');
-        }
-
-        function updateApiResponse(responseText) {
-            showApiResponseBox();
-            apiResponseContent.textContent = responseText;
-        }
+        
 
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -88,7 +74,6 @@
 
             statusMessage.textContent = '⏳ Sending...';
             showStatusBox();
-            apiResponseContent.textContent = 'Waiting for response...';
             try {
                 const response = await fetch('/send_code', {
                     method: 'POST',
@@ -109,8 +94,7 @@
                             ? data.new_credits
                             : undefined;
 
-                updateApiResponse(JSON.stringify(data, null, 2));
-
+                
                 if (isSuccess && typeof remainingCredits === 'number') {
                     updateStatus(data.email || email, remainingCredits, message);
                 } else {
@@ -118,7 +102,6 @@
                 }
             } catch (error) {
                 statusMessage.textContent = '⚠️ Request failed. Please try again.';
-                updateApiResponse(error.message || 'Network error');
             }
         });
     </script>
