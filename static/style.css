@@ -159,6 +159,10 @@ input {
     display: none;
 }
 
+.response-box.visible {
+    display: block;
+}
+
 .response-title {
     margin: 0 0 10px;
     font-size: 14px;
