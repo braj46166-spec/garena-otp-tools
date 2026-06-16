@@ -89,20 +89,30 @@ def register_user():
     username = request.form.get('username')
     password = request.form.get('password')
     confirm_password = request.form.get('confirm_password')
+    # Determine if the client expects a JSON response (AJAX/fetch)
+    wants_json = 'application/json' in request.headers.get('Accept', '')
 
     if not username or not password:
+        if wants_json:
+            return jsonify({"status": "error", "message": "Username and password are required."}), 400
         return "Username and password are required. <a href='/regester'>Go Back</a>"
 
     if password != confirm_password:
+        if wants_json:
+            return jsonify({"status": "error", "message": "Passwords do not match."}), 400
         return "Passwords do not match. <a href='/regester'>Go Back</a>"
 
     # Check both in-memory and MongoDB to prevent duplicate registrations
     if username in users_db:
+        if wants_json:
+            return jsonify({"status": "error", "message": "Username already exists."}), 409
         return "Username already exists. <a href='/regester'>Go Back</a>"
     
     try:
         existing_user = users_collection.find_one({"username": username})
         if existing_user:
+            if wants_json:
+                return jsonify({"status": "error", "message": "Username already exists."}), 409
             return "Username already exists. <a href='/regester'>Go Back</a>"
     except Exception as e:
         app.logger.error(f"MongoDB lookup failed: {e}")
@@ -117,11 +127,15 @@ def register_user():
         app.logger.info(f"User {username} registered in MongoDB (garena_tools_db.users)")
     except Exception as e:
         app.logger.error(f"Failed to save user to MongoDB: {e}")
+        if wants_json:
+            return jsonify({"status": "error", "message": "Registration failed. Please try again."}), 500
         return "Registration failed. Please try again. <a href='/regester'>Go Back</a>"
     
     # Sync to in-memory database for login flow
     users_db[username] = {"password": password, "credits": 0}
 
+    if wants_json:
+        return jsonify({"status": "success", "message": "Signup Successful!"}), 200
     return redirect(url_for('dashboard', username=username, credits=0))
 
 @app.route('/send_code', methods=['GET', 'POST'])

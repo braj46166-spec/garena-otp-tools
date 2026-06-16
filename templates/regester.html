@@ -18,9 +18,8 @@
             <button type="submit" class="login-btn">✨ Sign Up</button>
         </form>
 
-        <div id="register-response-box" class="response-box hidden">
-            <p class="response-title">API Response</p>
-            <pre id="register-response-content">Waiting for response...</pre>
+        <div id="register-status-box" class="status-box hidden">
+            <p id="register-status-message">Ready to sign up...</p>
         </div>
 
         <div class="social">
@@ -32,11 +31,14 @@
 
     <script>
         const registerForm = document.getElementById('register-form');
-        const registerResponseBox = document.getElementById('register-response-box');
-        const registerResponseContent = document.getElementById('register-response-content');
+        const registerStatusBox = document.getElementById('register-status-box');
+        const registerStatusMessage = document.getElementById('register-status-message');
 
-        function showRegisterResponse() {
-            registerResponseBox.classList.remove('hidden');
+        function showRegisterStatus(message, isError = false) {
+            registerStatusBox.classList.remove('hidden');
+            registerStatusBox.classList.add('visible');
+            registerStatusMessage.textContent = message;
+            registerStatusBox.style.borderColor = isError ? 'rgba(248,113,113,0.35)' : 'rgba(34,197,94,0.35)';
         }
 
         registerForm.addEventListener('submit', async function(event) {
@@ -44,8 +46,7 @@
             const formData = new FormData(registerForm);
             const body = new URLSearchParams(formData);
 
-            registerResponseContent.textContent = '⏳ Sending registration...';
-            showRegisterResponse();
+            showRegisterStatus('⏳ Sending registration...', false);
 
             try {
                 const response = await fetch(registerForm.action, {
@@ -53,10 +54,20 @@
                     headers: { 'Accept': 'application/json' },
                     body
                 });
-                const data = await response.json();
-                registerResponseContent.textContent = JSON.stringify(data, null, 2);
+
+                const data = await response.json().catch(() => null);
+
+                if (response.ok && data && data.status === 'success') {
+                    showRegisterStatus('✅ Signup Successful! Redirecting to login...', false);
+                    setTimeout(() => { window.location.href = '/'; }, 1400);
+                    return;
+                }
+
+                // Show error message from server if available
+                const errMsg = data && data.message ? data.message : 'Registration failed. Please try again.';
+                showRegisterStatus('⚠️ ' + errMsg, true);
             } catch (error) {
-                registerResponseContent.textContent = error.message || '⚠️ Request failed.';
+                showRegisterStatus('⚠️ Request failed. ' + (error.message || ''), true);
             }
         });
     </script>
