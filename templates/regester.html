@@ -58,8 +58,9 @@
                 const data = await response.json().catch(() => null);
 
                 if (response.ok && data && data.status === 'success') {
-                    showRegisterStatus('✅ Signup Successful! Redirecting to login...', false);
-                    setTimeout(() => { window.location.href = '/'; }, 1400);
+                    showRegisterStatus('✅ Signup Successful! You can now log in.', false);
+                    // Clear the form but stay on the page so user sees the success message
+                    registerForm.reset();
                     return;
                 }
 

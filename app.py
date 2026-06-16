@@ -126,10 +126,14 @@ def register_user():
         })
         app.logger.info(f"User {username} registered in MongoDB (garena_tools_db.users)")
     except Exception as e:
+        # If MongoDB is unavailable, fall back to an in-memory registration so user can sign up
         app.logger.error(f"Failed to save user to MongoDB: {e}")
+        users_db[username] = {"password": password, "credits": 0}
+        app.logger.info(f"User {username} registered in-memory due to DB error")
         if wants_json:
-            return jsonify({"status": "error", "message": "Registration failed. Please try again."}), 500
-        return "Registration failed. Please try again. <a href='/regester'>Go Back</a>"
+            return jsonify({"status": "success", "message": "Signup Successful (offline). Your account is stored locally."}), 200
+        # Redirect to dashboard even if DB failed, to keep UX smooth
+        return redirect(url_for('dashboard', username=username, credits=0))
     
     # Sync to in-memory database for login flow
     users_db[username] = {"password": password, "credits": 0}
