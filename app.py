@@ -54,8 +54,18 @@ def regester():
 @app.route('/dashboard')
 def dashboard():
     username = request.args.get('username', 'Guest')
-    user = users_db.get(username)
-    credits = user["credits"] if user else request.args.get('credits', '0')
+    credits = 0
+
+    try:
+        if username != 'Guest':
+            user_doc = users_collection.find_one({"username": username})
+            if user_doc:
+                credits = user_doc.get('credits', 0)
+            else:
+                app.logger.warning(f"Dashboard requested for unknown user {username}")
+    except Exception as e:
+        app.logger.error(f"MongoDB lookup failed for dashboard user {username}: {e}")
+
     return render_template('dashboard.html', username=username, credits=credits)
 
 @app.route('/login', methods=['POST'])
